@@ -12,9 +12,26 @@ Attach the spark container
 docker exec -it spark-delta /opt/spark/bin/spark-sql
 ```
 
+Show schema first
+
+```SQL
+SHOW SCHEMAS;
+```
+
+You should get a default schema.
+```
+namespace
+default
+```
+
+Checkout default schema;
+```SQL
+USE default;
+```
+
 Create table
 ```SQL
-CREATE OR REPLACE TABLE student (id INT, name STRING, age INT) USING DELTA LOCATION 's3a://warehouse/student' TBLPROPERTIES (delta.enableChangeDataFeed = true);
+CREATE TABLE student (id INT, name STRING, age INT) USING DELTA LOCATION 's3://warehouse/student' TBLPROPERTIES (delta.enableChangeDataFeed = true);
 ```
 
 Insert data

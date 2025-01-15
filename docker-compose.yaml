@@ -6,19 +6,40 @@ services:
     container_name: spark-delta
     networks:
       lakehouse_net:
-    depends_on:
-      - minio
-    environment:
-      - AWS_ACCESS_KEY=admin
-      - AWS_ACCESS_KEY_ID=admin
-      - AWS_SECRET_KEY=password
-      - AWS_SECRET_ACCESS_KEY=password
-      - AWS_REGION=us-east-1
-      - AWS_JAVA_V1_DISABLE_DEPRECATION_ANNOUNCEMENT=true
     volumes:
       - type: bind
         source: spark-delta/conf
         target: /opt/spark/conf
+    depends_on:
+      - minio
+      - unity-catalog
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+      - AWS_JAVA_V1_DISABLE_DEPRECATION_ANNOUNCEMENT=true
+  unity-catalog:
+    build: 
+      context: unity-catalog
+    container_name: unity-catalog
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+      - AWS_JAVA_V1_DISABLE_DEPRECATION_ANNOUNCEMENT=true
+    depends_on:
+      - minio
+    networks:
+      lakehouse_net:
+    ports:
+      - "8080:8080"
+    volumes:
+      - type: bind
+        source: unity-catalog/etc/conf
+        target: /app/unitycatalog/etc/conf
+      - type: volume
+        source: unitycatalog_data
+        target: /app/unitycatalog/etc/data
   minio:
     image: minio/minio
     container_name: minio
@@ -33,6 +54,10 @@ services:
     ports:
       - 9001:9001
       - 9000:9000
+    volumes:
+      - type: volume
+        source: minio_data
+        target: /data
     command: ["server", "/data", "--console-address", ":9001"]
   mc:
     depends_on:
@@ -55,3 +80,6 @@ services:
       "
 networks:
   lakehouse_net:
+volumes:
+  minio_data:
+  unitycatalog_data:

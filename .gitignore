@@ -1,2 +1,4 @@
 .vscode
 **/target
+unity-catalog/etc/conf/*
+!unity-catalog/etc/conf/server.properties
