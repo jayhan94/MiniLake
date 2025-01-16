@@ -24,7 +24,7 @@ namespace
 default
 ```
 
-Checkout default schema;
+Checkout default schema
 ```SQL
 USE default;
 ```
