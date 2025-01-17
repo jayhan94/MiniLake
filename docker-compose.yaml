@@ -1,45 +1,40 @@
 services:
-  spark-delta:
-    build:
-      context: spark-delta
-      dockerfile: Dockerfile
-    container_name: spark-delta
-    networks:
-      lakehouse_net:
+  spark-iceberg:
+    image: tabulario/spark-iceberg
+    container_name: spark-iceberg
     volumes:
       - type: bind
-        source: spark-delta/conf
+        source: spark-iceberg/conf
         target: /opt/spark/conf
-    depends_on:
-      - minio
-      - unity-catalog
-    environment:
-      - AWS_ACCESS_KEY_ID=admin
-      - AWS_SECRET_ACCESS_KEY=password
-      - AWS_REGION=us-east-1
-      - AWS_JAVA_V1_DISABLE_DEPRECATION_ANNOUNCEMENT=true
-  unity-catalog:
-    build: 
-      context: unity-catalog
-    container_name: unity-catalog
-    environment:
-      - AWS_ACCESS_KEY_ID=admin
-      - AWS_SECRET_ACCESS_KEY=password
-      - AWS_REGION=us-east-1
-      - AWS_JAVA_V1_DISABLE_DEPRECATION_ANNOUNCEMENT=true
-    depends_on:
-      - minio
     networks:
-      lakehouse_net:
+      minilake_net:
+    depends_on:
+      - iceberg-rest
+      - minio
+    environment:
+      - SPARK_HOME=/opt/spark
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
     ports:
-      - "8080:8080"
-    volumes:
-      - type: bind
-        source: unity-catalog/etc/conf
-        target: /app/unitycatalog/etc/conf
-      - type: volume
-        source: unitycatalog_data
-        target: /app/unitycatalog/etc/data
+      - 8888:8888
+      - 8080:8080
+      - 10000:10000
+      - 10001:10001
+  iceberg-rest:
+    image: tabulario/iceberg-rest
+    container_name: iceberg-rest
+    networks:
+      minilake_net:
+    ports:
+      - 8181:8181
+    environment:
+      - AWS_ACCESS_KEY_ID=admin
+      - AWS_SECRET_ACCESS_KEY=password
+      - AWS_REGION=us-east-1
+      - CATALOG_WAREHOUSE=s3://minilake/
+      - CATALOG_IO__IMPL=org.apache.iceberg.aws.s3.S3FileIO
+      - CATALOG_S3_ENDPOINT=http://minio:9000
   minio:
     image: minio/minio
     container_name: minio
@@ -48,16 +43,12 @@ services:
       - MINIO_ROOT_PASSWORD=password
       - MINIO_DOMAIN=minio
     networks:
-      lakehouse_net:
+      minilake_net:
         aliases:
-          - warehouse.minio
+          - minilake.minio
     ports:
       - 9001:9001
       - 9000:9000
-    volumes:
-      - type: volume
-        source: minio_data
-        target: /data
     command: ["server", "/data", "--console-address", ":9001"]
   mc:
     depends_on:
@@ -65,7 +56,7 @@ services:
     image: minio/mc
     container_name: mc
     networks:
-      lakehouse_net:
+      minilake_net:
     environment:
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=password
@@ -73,13 +64,10 @@ services:
     entrypoint: >
       /bin/sh -c "
       until (/usr/bin/mc config host add minio http://minio:9000 admin password) do echo '...waiting...' && sleep 1; done;
-      /usr/bin/mc rm -r --force minio/warehouse;
-      /usr/bin/mc mb minio/warehouse;
-      /usr/bin/mc policy set public minio/warehouse;
+      /usr/bin/mc rm -r --force minio/minilake;
+      /usr/bin/mc mb minio/minilake;
+      /usr/bin/mc policy set public minio/minilake;
       tail -f /dev/null
       "
 networks:
-  lakehouse_net:
-volumes:
-  minio_data:
-  unitycatalog_data:
+  minilake_net:

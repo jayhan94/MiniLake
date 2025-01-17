@@ -1,5 +1,5 @@
 # MiniLake
-A morden mini lakehouse based on Spark and Delta running in the docker.
+A morden mini lakehouse based on Spark and Iceberg running in the docker.
 
 # Usage
 Build and run
@@ -9,7 +9,7 @@ docker compose up --build
 
 Attach the spark container
 ```bash
-docker exec -it spark-delta /opt/spark/bin/spark-sql
+docker exec -it spark-iceberg /opt/spark/bin/spark-sql
 ```
 
 Show schema first
@@ -31,7 +31,7 @@ USE default;
 
 Create table
 ```SQL
-CREATE TABLE student (id INT, name STRING, age INT) USING DELTA LOCATION 's3://warehouse/student' TBLPROPERTIES (delta.enableChangeDataFeed = true);
+CREATE TABLE student (id INT, name STRING, age INT) USING ICEBERG LOCATION 's3://minilake/student';
 ```
 
 Insert data
