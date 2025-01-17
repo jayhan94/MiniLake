@@ -66,7 +66,6 @@ services:
     entrypoint: >
       /bin/sh -c "
       until (/usr/bin/mc config host add minio http://minio:9000 admin password) do echo '...waiting...' && sleep 1; done;
-      /usr/bin/mc rm -r --force minio/minilake;
       /usr/bin/mc mb minio/minilake;
       /usr/bin/mc policy set public minio/minilake;
       tail -f /dev/null
