@@ -3,9 +3,7 @@ services:
     image: tabulario/spark-iceberg
     container_name: spark-iceberg
     volumes:
-      - type: bind
-        source: spark-iceberg/conf
-        target: /opt/spark/conf
+      - ./spark-iceberg/conf:/opt/spark/conf
     networks:
       minilake_net:
     depends_on:
@@ -16,11 +14,6 @@ services:
       - AWS_ACCESS_KEY_ID=admin
       - AWS_SECRET_ACCESS_KEY=password
       - AWS_REGION=us-east-1
-    ports:
-      - 8888:8888
-      - 8080:8080
-      - 10000:10000
-      - 10001:10001
   iceberg-rest:
     image: tabulario/iceberg-rest
     container_name: iceberg-rest
